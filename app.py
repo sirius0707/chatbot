@@ -148,17 +148,34 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-with st.chat_message("assistant"):
+# Accept user input
+if prompt := st.chat_input("What's up?"):
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Display user message in chat message container
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Display assistant response in chat message container
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+
         st.write("Here are the rules:")
         st.write(rules)
-        stream = client.chat.completions.create(
-            model=st.session_state["openai_model"],
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-        response = st.write_stream(stream)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        
+        # Simulate stream of response with milliseconds delay
+        streaming_response = query_engine.query(prompt)
+        
+        for chunk in streaming_response.response_gen:
+            full_response += chunk
+            message_placeholder.markdown(full_response + "▌")
+
+        # full_response = query_engine.query(prompt)
+
+        message_placeholder.markdown(full_response)
+        # st.session_state.context = ctx
+
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
